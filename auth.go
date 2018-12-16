@@ -17,8 +17,7 @@ const (
 	OpenSourceClientId = "X245A4XAIBGVM"
 )
 
-// OpenSource auth
-func (c *Client) ObtainNewCredentials(clientID string) (v Verification, err error) {
+func (c *Client) StartAuthentication(clientID string) (v Verification, err error) {
 	authUrl, err := url.Parse(DeviceUrl)
 	if err != nil {
 		return v, err
