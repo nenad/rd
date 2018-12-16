@@ -28,7 +28,7 @@ func TestClient_NewCredentialsCanBeObtained(t *testing.T) {
 		}
 	})
 
-	verification, err := client.ObtainNewCredentials(OpenSourceClientId)
+	verification, err := client.StartAuthentication(OpenSourceClientId)
 	assert.NoError(t, err)
 	assert.Equal(t, Verification{
 		ExpiresIn:             600,
