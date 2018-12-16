@@ -2,7 +2,6 @@ package realdebrid
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -86,11 +85,10 @@ type (
 	}
 )
 
-func (e httpError) Error() string {
-	builder := strings.Builder{}
-	builder.WriteString(fmt.Sprintf("error_message: %s\n", e.ErrorMessage))
-	builder.WriteString(fmt.Sprintf("error_code: %d - %s\n", e.ErrorCode, e.ErrorCodeDescription))
-	builder.WriteString(fmt.Sprintf("error_details: %s\n", e.ErrorDetails))
-	builder.WriteString(fmt.Sprintf("status_code: %d\n", e.StatusCode))
-	return builder.String()
+func (e httpError) Error() (msg string) {
+	msg += fmt.Sprintf("error_message: %s\n", e.ErrorMessage)
+	msg += fmt.Sprintf("error_code: %d - %s\n", e.ErrorCode, e.ErrorCodeDescription)
+	msg += fmt.Sprintf("error_details: %s\n", e.ErrorDetails)
+	msg += fmt.Sprintf("status_code: %d\n", e.StatusCode)
+	return msg
 }
