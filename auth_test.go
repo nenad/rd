@@ -98,7 +98,8 @@ func TestClient_AuthorizeSuccess(t *testing.T) {
 		}
 	})
 
-	err := client.Authorize("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
+	token, err := client.ObtainAccessToken("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
+	client.Authenticate(token)
 	assert.NoError(t, err)
 	expectedToken := Token{
 		ExpiresIn:    3600,
@@ -107,10 +108,10 @@ func TestClient_AuthorizeSuccess(t *testing.T) {
 		RefreshToken: "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP",
 	}
 
-	assert.Equal(t, expectedToken.ExpiresIn, client.token.ExpiresIn)
-	assert.Equal(t, expectedToken.AccessToken, client.token.AccessToken)
-	assert.Equal(t, expectedToken.TokenType, client.token.TokenType)
-	assert.Equal(t, expectedToken.RefreshToken, client.token.RefreshToken)
+	assert.Equal(t, expectedToken.ExpiresIn, token.ExpiresIn)
+	assert.Equal(t, expectedToken.AccessToken, token.AccessToken)
+	assert.Equal(t, expectedToken.TokenType, token.TokenType)
+	assert.Equal(t, expectedToken.RefreshToken, token.RefreshToken)
 	assert.True(t, client.IsAuthorized())
 }
 
@@ -132,7 +133,9 @@ func TestClient_AuthorizeFailure(t *testing.T) {
 		}
 	})
 
-	err := client.Authorize("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
+	token, err := client.ObtainAccessToken("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
+	client.Authenticate(token)
+	assert.Empty(t, token)
 	assert.EqualError(t, err, "error_message: wrong_parameter\nerror_code: 2 - Unknown error\nerror_details: \nstatus_code: 400\n")
 	assert.False(t, client.IsAuthorized())
 }
@@ -159,7 +162,7 @@ func TestClient_Reauthorize(t *testing.T) {
 
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token": "QMUJ32Q4S3X57D3NC354V4OI62JZ74KV5H3DZX7JJEOZSLXCWVYA", "expires_in": 3600, "refresh_token": "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP", "token_type": "Bearer" }`)),
+				Body:       ioutil.NopCloser(bytes.NewBufferString(`{"access_token": "ZMUJ32Q4S3X57D3NC354V4OI62JZ74KV5H3DZX7JJEOZSLXCWVYA", "expires_in": 3600, "refresh_token": "QD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP", "token_type": "Bearer" }`)),
 				Header: map[string][]string{
 					"Content-Type": {"application/json"},
 				},
@@ -169,7 +172,7 @@ func TestClient_Reauthorize(t *testing.T) {
 		return nil
 	})
 
-	err := client.Reauthorize()
+	err := client.Reauthenticate()
 	assert.NoError(t, err)
 	assert.True(t, client.IsAuthorized())
 }
