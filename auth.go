@@ -20,14 +20,14 @@ const (
 // OpenSource auth
 // TODO Add custom auth
 
-func (c *Client) ObtainNewCredentials() (v Verification, err error) {
+func (c *Client) ObtainNewCredentials(clientID string) (v Verification, err error) {
 	authUrl, err := url.Parse(DeviceUrl)
 	if err != nil {
 		return v, err
 	}
 
 	query := authUrl.Query()
-	query.Add("client_id", OpenSourceClientId)
+	query.Add("client_id", clientID)
 	query.Add("new_credentials", "yes")
 	authUrl.RawQuery = query.Encode()
 
