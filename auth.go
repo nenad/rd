@@ -18,8 +18,6 @@ const (
 )
 
 // OpenSource auth
-// TODO Add custom auth
-
 func (c *Client) ObtainNewCredentials(clientID string) (v Verification, err error) {
 	authUrl, err := url.Parse(DeviceUrl)
 	if err != nil {
@@ -40,14 +38,14 @@ func (c *Client) ObtainNewCredentials(clientID string) (v Verification, err erro
 	return v, err
 }
 
-func (c *Client) ObtainSecret(deviceCode string) (secrets Secrets, err error) {
+func (c *Client) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error) {
 	authUrl, err := url.Parse(CredentialsUrl)
 	if err != nil {
 		return secrets, err
 	}
 
 	query := authUrl.Query()
-	query.Add("client_id", OpenSourceClientId)
+	query.Add("client_id", clientID)
 	query.Add("code", deviceCode)
 	authUrl.RawQuery = query.Encode()
 
@@ -87,7 +85,7 @@ func (c *Client) Reauthorize() error {
 		return fmt.Errorf("cannot reauthorize without refresh token")
 	}
 
-	secrets, err := c.ObtainSecret(c.token.RefreshToken)
+	secrets, err := c.ObtainSecret(c.token.RefreshToken, OpenSourceClientId)
 	if err != nil {
 		return err
 	}

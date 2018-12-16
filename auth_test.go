@@ -54,7 +54,7 @@ func TestClient_SecretsCanBeObtainedSuccessfully(t *testing.T) {
 		}
 	})
 
-	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ")
+	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", OpenSourceClientId)
 	assert.NoError(t, err)
 	assert.Equal(t, Secrets{
 		ClientSecret: "135d1b6dc60dddbdaa2e5d41772c85d56c54790b",
@@ -76,7 +76,7 @@ func TestClient_FailToGetAuthorizedSecrets(t *testing.T) {
 		}
 	})
 
-	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ")
+	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", OpenSourceClientId)
 	assert.EqualError(t, err, "secrets not authorized")
 }
 
