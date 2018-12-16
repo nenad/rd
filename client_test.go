@@ -3,7 +3,6 @@ package realdebrid
 import (
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,11 +14,11 @@ func (rt TestRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error)
 	return rt(req), nil
 }
 
-func NewTestClient(fn TestRoundTripFunc) *Client {
+func NewTestClient(fn TestRoundTripFunc) *RDClient {
 	c := &http.Client{
 		Transport: fn,
 	}
-	return NewClient(Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"}, c)
+	return &RDClient{token: Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"}, httpClient: c}
 }
 
 func Test_AuthorizationHeaderIsPresent(t *testing.T) {
@@ -33,7 +32,7 @@ func Test_AuthorizationHeaderIsPresent(t *testing.T) {
 	})
 
 	req, _ := http.NewRequest("GET", "https://example.com", nil)
-	_, err := client.do(req)
+	_, err := client.Do(req)
 	assert.NoError(t, err)
 }
 
@@ -53,7 +52,6 @@ func Test_FormPost(t *testing.T) {
 		}
 	})
 
-	_, err := client.postForm("https://example.com", url.Values{"hello": {"world"}})
+	_, err := PostForm(client, "https://example.com", map[string]string{"hello": "world"})
 	assert.NoError(t, err)
-
 }
