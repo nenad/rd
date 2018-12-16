@@ -10,8 +10,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func NewTorrentTestClient(fn TestRoundTripFunc) TorrentService {
+	c := &http.Client{
+		Transport: fn,
+	}
+	return NewClient(
+		Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"},
+		c).TorrentService
+}
+
 func TestClient_AddMagnetLinkSimple(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents/addMagnet", req.URL.String())
 		assert.Equal(t, "POST", req.Method)
 		assert.Equal(t, "magnet-url", req.FormValue("magnet"))
@@ -33,7 +42,7 @@ func TestClient_AddMagnetLinkSimple(t *testing.T) {
 }
 
 func TestClient_GetTorrent(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents/info/MNREAKNMGAG7C", req.URL.String())
 		assert.Equal(t, "GET", req.Method)
 
@@ -78,7 +87,7 @@ func TestClient_GetTorrent(t *testing.T) {
 }
 
 func TestClient_SelectFilesFromTorrent(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents/selectFiles/XCBYL4ZIYPU42", req.URL.String())
 		assert.Equal(t, "POST", req.Method)
 

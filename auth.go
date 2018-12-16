@@ -3,7 +3,6 @@ package realdebrid
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"time"
 )
 
@@ -17,20 +16,36 @@ const (
 	OpenSourceClientId = "X245A4XAIBGVM"
 )
 
-// StartAuthentication starts the authentication flow for the service
-// RealDebrid API information: https://api.real-debrid.com/#device_auth_no_secret
-func (c *Client) StartAuthentication(clientID string) (v Verification, err error) {
-	authUrl, err := url.Parse(DeviceUrl)
-	if err != nil {
-		return v, err
+type (
+	AuthService interface {
+		StartAuthentication(clientID string) (v Verification, err error)
+		ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error)
+		ObtainAccessToken(clientID, secret, code string) (t Token, err error)
+		TokenRefresher
 	}
 
-	query := authUrl.Query()
-	query.Add("client_id", clientID)
-	query.Add("new_credentials", "yes")
-	authUrl.RawQuery = query.Encode()
+	AuthClient struct {
+		HTTPDoer
+	}
 
-	resp, err := c.get(authUrl.String())
+	Verification struct {
+		DeviceCode            string `json:"device_code"`
+		UserCode              string `json:"user_code"`
+		Interval              int    `json:"interval"`
+		ExpiresIn             int    `json:"expires_in"`
+		VerificationURL       string `json:"verification_url"`
+		DirectVerificationURL string `json:"direct_verification_url"`
+	}
+	Secrets struct {
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
+)
+
+// StartAuthentication starts the authentication flow for the service
+// RealDebrid API information: https://api.real-debrid.com/#device_auth_no_secret
+func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err error) {
+	resp, err := Get(c, DeviceUrl, map[string]string{"client_id": clientID, "new_credentials": "yes"})
 	if err != nil {
 		return v, err
 	}
@@ -41,18 +56,8 @@ func (c *Client) StartAuthentication(clientID string) (v Verification, err error
 
 // ObtainSecret returns the Client ID and Client secret that are used for
 // obtaining a valid token in the next step
-func (c *Client) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error) {
-	authUrl, err := url.Parse(CredentialsUrl)
-	if err != nil {
-		return secrets, err
-	}
-
-	query := authUrl.Query()
-	query.Add("client_id", clientID)
-	query.Add("code", deviceCode)
-	authUrl.RawQuery = query.Encode()
-
-	resp, err := c.get(authUrl.String())
+func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error) {
+	resp, err := Get(c, CredentialsUrl, map[string]string{"client_id": clientID, "code": deviceCode})
 	if err != nil {
 		return secrets, err
 	}
@@ -65,56 +70,32 @@ func (c *Client) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err
 }
 
 // ObtainAccessToken tries to get the client ID
-func (c *Client) ObtainAccessToken(clientID, secret, code string) (t Token, err error) {
-	resp, err := c.postForm(TokenUrl, url.Values{
-		"client_id":     {clientID},
-		"client_secret": {secret},
-		"code":          {code},
-		"grant_type":    {"http://oauth.net/grant_type/device/1.0"},
+func (c *AuthClient) ObtainAccessToken(clientID, secret, code string) (t Token, err error) {
+	resp, err := PostForm(c, TokenUrl, map[string]string{
+		"client_id":     clientID,
+		"client_secret": secret,
+		"code":          code,
+		"grant_type":    "http://oauth.net/grant_type/device/1.0",
 	})
-
 	if err != nil {
 		return t, err
 	}
 
-	t.obtainedAt = time.Now()
+	t.ObtainedAt = time.Now()
 	err = json.NewDecoder(resp.Body).Decode(&t)
 	return t, err
 }
 
-// Authenticate sets a given token for authentication for further requests
-func (c *Client) Authenticate(t Token) {
-	c.token = t
-}
-
-// Reauthenticate tries to get a new token from the service, and if successful
-// it sets the new token
-func (c *Client) Reauthenticate() error {
-	if c.token.RefreshToken == "" {
-		return fmt.Errorf("cannot reauthorize without refresh token")
+// ObtainAccessToken tries to get the client ID
+func (c *AuthClient) RefreshAccessToken(token Token) (t Token, err error) {
+	if token.RefreshToken == "" {
+		return t, fmt.Errorf("cannot reauthorize without refresh token")
 	}
 
-	secrets, err := c.ObtainSecret(c.token.RefreshToken, OpenSourceClientId)
+	secrets, err := c.ObtainSecret(token.RefreshToken, OpenSourceClientId)
 	if err != nil {
-		return err
+		return t, err
 	}
 
-	t, err := c.ObtainAccessToken(secrets.ClientID, secrets.ClientSecret, c.token.RefreshToken)
-	if err != nil {
-		return err
-	}
-
-	c.Authenticate(t)
-	return nil
-}
-
-// IsAuthorized checks if the current token is still valid
-func (c *Client) IsAuthorized() bool {
-	if c.token.AccessToken == "" || c.token.RefreshToken == "" {
-		return false
-	}
-
-	// We expire the token 10 seconds before, so we don't send a request and risk to have it failing during transport
-	tokenExpiry := c.token.obtainedAt.Add(time.Second * time.Duration(c.token.ExpiresIn-10))
-	return time.Now().Before(tokenExpiry)
+	return c.ObtainAccessToken(secrets.ClientID, secrets.ClientSecret, token.RefreshToken)
 }

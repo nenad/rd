@@ -5,13 +5,19 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestClient_NewCredentialsCanBeObtained(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func NewAuthTestClient(fn TestRoundTripFunc) *AuthClient {
+	c := &http.Client{
+		Transport: fn,
+	}
+	return &AuthClient{c}
+}
+
+func TestAuthClient_CanStartAuthenticationFlowSuccessfully(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/oauth/v2/device/code?client_id=X245A4XAIBGVM&new_credentials=yes", req.URL.String())
 		assert.Equal(t, "GET", req.Method)
 
@@ -40,8 +46,8 @@ func TestClient_NewCredentialsCanBeObtained(t *testing.T) {
 	}, verification)
 }
 
-func TestClient_SecretsCanBeObtainedSuccessfully(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func TestAuthClient_CanObtainSecretsSuccessfully(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/oauth/v2/device/credentials?client_id=X245A4XAIBGVM&code=YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", req.URL.String())
 		assert.Equal(t, "GET", req.Method)
 
@@ -62,8 +68,8 @@ func TestClient_SecretsCanBeObtainedSuccessfully(t *testing.T) {
 	}, secrets)
 }
 
-func TestClient_FailToGetAuthorizedSecrets(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func TestAuthClient_ErrorsOnWrongOrEmptySecrets(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/oauth/v2/device/credentials?client_id=X245A4XAIBGVM&code=YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", req.URL.String())
 		assert.Equal(t, "GET", req.Method)
 
@@ -80,8 +86,8 @@ func TestClient_FailToGetAuthorizedSecrets(t *testing.T) {
 	assert.EqualError(t, err, "secrets not authorized")
 }
 
-func TestClient_AuthorizeSuccess(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func TestAuthClient_CanObtainValidToken(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/oauth/v2/token", req.URL.String())
 		assert.Equal(t, "POST", req.Method)
 		assert.Equal(t, "0N2RHHK5OKNIX", req.FormValue("client_id"))
@@ -99,7 +105,6 @@ func TestClient_AuthorizeSuccess(t *testing.T) {
 	})
 
 	token, err := client.ObtainAccessToken("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
-	client.Authenticate(token)
 	assert.NoError(t, err)
 	expectedToken := Token{
 		ExpiresIn:    3600,
@@ -112,11 +117,10 @@ func TestClient_AuthorizeSuccess(t *testing.T) {
 	assert.Equal(t, expectedToken.AccessToken, token.AccessToken)
 	assert.Equal(t, expectedToken.TokenType, token.TokenType)
 	assert.Equal(t, expectedToken.RefreshToken, token.RefreshToken)
-	assert.True(t, client.IsAuthorized())
 }
 
-func TestClient_AuthorizeFailure(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func TestAuthClient_ErrorsOnFailedObtainingToken(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/oauth/v2/token", req.URL.String())
 		assert.Equal(t, "POST", req.Method)
 		assert.Equal(t, "0N2RHHK5OKNIX", req.FormValue("client_id"))
@@ -134,14 +138,12 @@ func TestClient_AuthorizeFailure(t *testing.T) {
 	})
 
 	token, err := client.ObtainAccessToken("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
-	client.Authenticate(token)
 	assert.Empty(t, token)
 	assert.EqualError(t, err, "error_message: wrong_parameter\nerror_code: 2 - Unknown error\nerror_details: \nstatus_code: 400\n")
-	assert.False(t, client.IsAuthorized())
 }
 
-func TestClient_Reauthorize(t *testing.T) {
-	client := NewTestClient(func(req *http.Request) *http.Response {
+func TestAuthClient_CanObtainAccessTokenFromRefreshToken(t *testing.T) {
+	client := NewAuthTestClient(func(req *http.Request) *http.Response {
 		if req.URL.String() == "https://api.real-debrid.com/oauth/v2/device/credentials?client_id=X245A4XAIBGVM&code=REFRESH_TOKEN" {
 			assert.Equal(t, "GET", req.Method)
 			return &http.Response{
@@ -172,19 +174,17 @@ func TestClient_Reauthorize(t *testing.T) {
 		return nil
 	})
 
-	err := client.Reauthenticate()
+	token, err := client.RefreshAccessToken(Token{RefreshToken: "REFRESH_TOKEN"})
 	assert.NoError(t, err)
-	assert.True(t, client.IsAuthorized())
-}
+	expectedToken := Token{
+		ExpiresIn:    3600,
+		AccessToken:  "ZMUJ32Q4S3X57D3NC354V4OI62JZ74KV5H3DZX7JJEOZSLXCWVYA",
+		TokenType:    "Bearer",
+		RefreshToken: "QD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP",
+	}
 
-func TestClient_ExpiredAuthorization(t *testing.T) {
-	client := NewClient(
-		Token{
-			AccessToken:  "ACCESS",
-			RefreshToken: "REFRESH",
-			obtainedAt:   time.Now().Add(-3600 * time.Second),
-		},
-		http.DefaultClient)
-
-	assert.False(t, client.IsAuthorized())
+	assert.Equal(t, expectedToken.ExpiresIn, token.ExpiresIn)
+	assert.Equal(t, expectedToken.AccessToken, token.AccessToken)
+	assert.Equal(t, expectedToken.TokenType, token.TokenType)
+	assert.Equal(t, expectedToken.RefreshToken, token.RefreshToken)
 }
