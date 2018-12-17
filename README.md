@@ -1,4 +1,4 @@
-# realdebrid-go
+# rd
 
 ![status](https://travis-ci.com/nenadstojanovikj/realdebrid-go.svg?branch=master)
 

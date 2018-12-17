@@ -1,4 +1,4 @@
-package realdebrid
+package rd_test
 
 import (
 	"bytes"
@@ -7,16 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nenadstojanovikj/rd"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func NewTorrentTestClient(fn TestRoundTripFunc) TorrentService {
+func NewTorrentTestClient(fn TestRoundTripFunc) rd.TorrentService {
 	c := &http.Client{
 		Transport: fn,
 	}
-	return NewClient(
-		Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"},
-		c).TorrentService
+	return rd.NewRealDebrid(
+		rd.Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"},
+		c).Torrents
 }
 
 func TestClient_AddMagnetLinkSimple(t *testing.T) {
@@ -38,7 +40,7 @@ func TestClient_AddMagnetLinkSimple(t *testing.T) {
 
 	urlInfo, err := client.AddMagnetLinkSimple("magnet-url")
 	assert.NoError(t, err)
-	assert.Equal(t, TorrentUrlInfo{ID: "MNREAKNMGAG7C", URI: "https://api.real-debrid.com/rest/1.0/torrents/info/MNREAKNMGAG7C"}, urlInfo)
+	assert.Equal(t, rd.TorrentUrlInfo{ID: "MNREAKNMGAG7C", URI: "https://api.real-debrid.com/rest/1.0/torrents/info/MNREAKNMGAG7C"}, urlInfo)
 }
 
 func TestClient_GetTorrent(t *testing.T) {
@@ -61,7 +63,7 @@ func TestClient_GetTorrent(t *testing.T) {
 
 	info, err := client.GetTorrent("MNREAKNMGAG7C")
 	assert.NoError(t, err)
-	assert.Equal(t, TorrentInfo{
+	assert.Equal(t, rd.TorrentInfo{
 		Added:            time.Date(2018, 12, 8, 21, 57, 33, 0, time.UTC),
 		Ended:            time.Date(2018, 11, 28, 04, 23, 19, 0, time.UTC),
 		ID:               "XCBYL4ZIYPU42",
@@ -73,8 +75,8 @@ func TestClient_GetTorrent(t *testing.T) {
 		Host:             "real-debrid.com",
 		Split:            2000,
 		Progress:         100,
-		Status:           StatusDownloaded,
-		Files: []File{
+		Status:           rd.StatusDownloaded,
+		Files: []rd.File{
 			{
 				ID:       1,
 				Path:     "/testfile.dat",

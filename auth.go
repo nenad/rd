@@ -1,4 +1,4 @@
-package realdebrid
+package rd
 
 import (
 	"encoding/json"
@@ -17,13 +17,6 @@ const (
 )
 
 type (
-	AuthService interface {
-		StartAuthentication(clientID string) (v Verification, err error)
-		ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error)
-		ObtainAccessToken(clientID, secret, code string) (t Token, err error)
-		TokenRefresher
-	}
-
 	AuthClient struct {
 		HTTPDoer
 	}
@@ -42,6 +35,10 @@ type (
 	}
 )
 
+func NewAuthClient(doer HTTPDoer) *AuthClient {
+	return &AuthClient{doer}
+}
+
 // StartAuthentication starts the authentication flow for the service
 // RealDebrid API information: https://api.real-debrid.com/#device_auth_no_secret
 func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err error) {
@@ -54,7 +51,7 @@ func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err e
 	return v, err
 }
 
-// ObtainSecret returns the Client ID and Client secret that are used for
+// ObtainSecret returns the HTTPClient ID and HTTPClient secret that are used for
 // obtaining a valid token in the next step
 func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error) {
 	resp, err := Get(c, CredentialsUrl, map[string]string{"client_id": clientID, "code": deviceCode})
@@ -69,7 +66,7 @@ func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets,
 	return secrets, err
 }
 
-// ObtainAccessToken tries to get the client ID
+// ObtainAccessToken tries to get a new token from the service
 func (c *AuthClient) ObtainAccessToken(clientID, secret, code string) (t Token, err error) {
 	resp, err := PostForm(c, TokenUrl, map[string]string{
 		"client_id":     clientID,
@@ -86,7 +83,7 @@ func (c *AuthClient) ObtainAccessToken(clientID, secret, code string) (t Token, 
 	return t, err
 }
 
-// ObtainAccessToken tries to get the client ID
+// RefreshAccessToken tries to refresh the given token and get a new one
 func (c *AuthClient) RefreshAccessToken(token Token) (t Token, err error) {
 	if token.RefreshToken == "" {
 		return t, fmt.Errorf("cannot reauthorize without refresh token")

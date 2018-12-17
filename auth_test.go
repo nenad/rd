@@ -1,4 +1,4 @@
-package realdebrid
+package rd_test
 
 import (
 	"bytes"
@@ -6,14 +6,22 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/nenadstojanovikj/rd"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func NewAuthTestClient(fn TestRoundTripFunc) *AuthClient {
+type TestRoundTripFunc func(req *http.Request) *http.Response
+
+func (rt TestRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return rt(req), nil
+}
+
+func NewAuthTestClient(fn TestRoundTripFunc) *rd.AuthClient {
 	c := &http.Client{
 		Transport: fn,
 	}
-	return &AuthClient{c}
+	return &rd.AuthClient{c}
 }
 
 func TestAuthClient_CanStartAuthenticationFlowSuccessfully(t *testing.T) {
@@ -34,9 +42,9 @@ func TestAuthClient_CanStartAuthenticationFlowSuccessfully(t *testing.T) {
 		}
 	})
 
-	verification, err := client.StartAuthentication(OpenSourceClientId)
+	verification, err := client.StartAuthentication(rd.OpenSourceClientId)
 	assert.NoError(t, err)
-	assert.Equal(t, Verification{
+	assert.Equal(t, rd.Verification{
 		ExpiresIn:             600,
 		Interval:              5,
 		VerificationURL:       "https://real-debrid.com/device",
@@ -60,9 +68,9 @@ func TestAuthClient_CanObtainSecretsSuccessfully(t *testing.T) {
 		}
 	})
 
-	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", OpenSourceClientId)
+	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", rd.OpenSourceClientId)
 	assert.NoError(t, err)
-	assert.Equal(t, Secrets{
+	assert.Equal(t, rd.Secrets{
 		ClientSecret: "135d1b6dc60dddbdaa2e5d41772c85d56c54790b",
 		ClientID:     "3N4RHGK5OKNIH",
 	}, secrets)
@@ -82,7 +90,7 @@ func TestAuthClient_ErrorsOnWrongOrEmptySecrets(t *testing.T) {
 		}
 	})
 
-	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", OpenSourceClientId)
+	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", rd.OpenSourceClientId)
 	assert.EqualError(t, err, "secrets not authorized")
 }
 
@@ -106,7 +114,7 @@ func TestAuthClient_CanObtainValidToken(t *testing.T) {
 
 	token, err := client.ObtainAccessToken("0N2RHHK5OKNIX", "135d1b6dc60dddbcaa2e5dc1772c85d56c5479ba", "ZD7HNOMEXOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOP")
 	assert.NoError(t, err)
-	expectedToken := Token{
+	expectedToken := rd.Token{
 		ExpiresIn:    3600,
 		AccessToken:  "QMUJ32Q4S3X57D3NC354V4OI62JZ74KV5H3DZX7JJEOZSLXCWVYA",
 		TokenType:    "Bearer",
@@ -174,9 +182,9 @@ func TestAuthClient_CanObtainAccessTokenFromRefreshToken(t *testing.T) {
 		return nil
 	})
 
-	token, err := client.RefreshAccessToken(Token{RefreshToken: "REFRESH_TOKEN"})
+	token, err := client.RefreshAccessToken(rd.Token{RefreshToken: "REFRESH_TOKEN"})
 	assert.NoError(t, err)
-	expectedToken := Token{
+	expectedToken := rd.Token{
 		ExpiresIn:    3600,
 		AccessToken:  "ZMUJ32Q4S3X57D3NC354V4OI62JZ74KV5H3DZX7JJEOZSLXCWVYA",
 		TokenType:    "Bearer",

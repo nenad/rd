@@ -1,4 +1,4 @@
-package realdebrid
+package rd
 
 import (
 	"io/ioutil"
@@ -14,11 +14,11 @@ func (rt TestRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error)
 	return rt(req), nil
 }
 
-func NewTestClient(fn TestRoundTripFunc) *RDClient {
+func NewTestClient(fn TestRoundTripFunc) *HTTPClient {
 	c := &http.Client{
 		Transport: fn,
 	}
-	return &RDClient{token: Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"}, httpClient: c}
+	return &HTTPClient{token: Token{ExpiresIn: 3600, TokenType: "Bearer", AccessToken: "VALID_TOKEN", RefreshToken: "REFRESH_TOKEN"}, client: c}
 }
 
 func Test_AuthorizationHeaderIsPresent(t *testing.T) {

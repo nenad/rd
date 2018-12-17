@@ -1,4 +1,4 @@
-package realdebrid
+package rd
 
 import (
 	"bytes"
@@ -13,7 +13,43 @@ type (
 	HTTPDoer interface {
 		Do(r *http.Request) (*http.Response, error)
 	}
+
+	HTTPClient struct {
+		client    HTTPDoer
+		token     Token
+		refresher TokenRefresher
+	}
 )
+
+func (c *HTTPClient) Do(r *http.Request) (resp *http.Response, err error) {
+	if c.refresher != nil && !c.token.IsValid() {
+		if err := c.refreshToken(); err != nil {
+			return nil, err
+		}
+	}
+
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", c.token.AccessToken))
+
+	resp, err = c.client.Do(r)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, parseErrorResponse(resp)
+}
+
+func AutoRefresh(c *HTTPClient) {
+	c.refresher = NewAuthClient(c.client)
+}
+
+func (c *HTTPClient) refreshToken() error {
+	token, err := c.refresher.RefreshAccessToken(c.token)
+	if err != nil {
+		return err
+	}
+	c.token = token
+	return nil
+}
 
 func PostForm(doer HTTPDoer, url string, values map[string]string) (resp *http.Response, err error) {
 	formBytes := &bytes.Buffer{}
@@ -77,6 +113,43 @@ func parseErrorResponse(r *http.Response) error {
 	}
 
 	return extractError(r)
+}
+
+var errorCodeDescription = map[int]string{
+	-1: "Internal error",
+	0:  "Unknown error",
+	1:  "Missing parameter",
+	2:  "Bad parameter value",
+	3:  "Unknown method",
+	4:  "Method not allowed",
+	5:  "Slow down",
+	6:  "Resource unreachable",
+	7:  "Resource not found",
+	8:  "Bad token",
+	9:  "Permission denied",
+	10: "Two-Factor authentication needed",
+	11: "Two-Factor authentication pending",
+	12: "Invalid login",
+	13: "Invalid password",
+	14: "Account locked",
+	15: "Account not activated",
+	16: "Unsupported hoster",
+	17: "Hoster in maintenance",
+	18: "Hoster limit reached",
+	19: "Hoster temporarily unavailable",
+	20: "Hoster not available for free users",
+	21: "Too many active downloads",
+	22: "IP Address not allowed",
+	23: "Traffic exhausted",
+	24: "File unavailable",
+	25: "Service unavailable",
+	26: "Upload too big",
+	27: "Upload error",
+	28: "File not allowed",
+	29: "Torrent too big",
+	30: "Torrent file invalid",
+	31: "Action already done",
+	32: "Image resolution error",
 }
 
 type httpError struct {
