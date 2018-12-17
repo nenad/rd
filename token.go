@@ -1,4 +1,4 @@
-package realdebrid
+package rd
 
 import (
 	"time"
