@@ -102,6 +102,24 @@ func Get(doer HTTPDoer, path string, params ...map[string]string) (resp *http.Re
 	return resp, parseErrorResponse(resp)
 }
 
+func Delete(doer HTTPDoer, path string) (resp *http.Response, err error) {
+	u, err := url.Parse(path)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err = doer.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, parseErrorResponse(resp)
+}
+
 func parseErrorResponse(r *http.Response) error {
 	if r.StatusCode >= 200 && r.StatusCode < 300 {
 		return nil
