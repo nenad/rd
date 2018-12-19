@@ -88,6 +88,59 @@ func TestClient_GetTorrent(t *testing.T) {
 	}, info)
 }
 
+func TestClient_GetTorrents(t *testing.T) {
+	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
+		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents", req.URL.String())
+		assert.Equal(t, "GET", req.Method)
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body: ioutil.NopCloser(bytes.NewBufferString(`
+[
+    {
+        "id": "DW6CJLD27M7K7",
+        "filename": "test-array",
+        "hash": "baf982e9b3b32c1bf0b40812cd8e75857fb9b0cc",
+        "bytes": 0,
+        "host": "real-debrid.com",
+        "split": 2000,
+        "progress": 100,
+        "status": "downloaded",
+        "added": "2018-12-19T23:33:09.000Z",
+        "links": [
+            "https://real-debrid.com/d/HIMWA4NP4ZLGY"
+        ],
+        "ended": "2018-11-22T06:53:59.000Z"
+    }
+]
+`,
+			)),
+			Header: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+		}
+	})
+
+	info, err := client.GetTorrents()
+	assert.NoError(t, err)
+	assert.Equal(t, []rd.TorrentInfo{{
+		Added:            time.Date(2018, 12, 19, 23, 33, 9, 0, time.UTC),
+		Ended:            time.Date(2018, 11, 22, 6, 53, 59, 0, time.UTC),
+		ID:               "DW6CJLD27M7K7",
+		Filename:         "test-array",
+		OriginalFilename: "",
+		Hash:             "baf982e9b3b32c1bf0b40812cd8e75857fb9b0cc",
+		Bytes:            0,
+		OriginalBytes:    0,
+		Host:             "real-debrid.com",
+		Split:            2000,
+		Progress:         100,
+		Status:           rd.StatusDownloaded,
+		Files:            nil,
+		Links:            []string{"https://real-debrid.com/d/HIMWA4NP4ZLGY"},
+	}}, info)
+}
+
 func TestClient_SelectFilesFromTorrent(t *testing.T) {
 	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
 		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents/selectFiles/XCBYL4ZIYPU42", req.URL.String())
