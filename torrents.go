@@ -12,6 +12,7 @@ import (
 const (
 	AddMagnetUrl      = ApiBaseUrl + "/torrents/addMagnet"
 	GetTorrentInfoUrl = ApiBaseUrl + "/torrents/info/%s"
+	GetTorrentsUrl    = ApiBaseUrl + "/torrents"
 	SelectFilesUrl    = ApiBaseUrl + "/torrents/selectFiles/%s"
 )
 
@@ -35,6 +36,7 @@ type (
 		AddMagnetLinkSimple(magnet string) (info TorrentUrlInfo, err error)
 		SelectFilesFromTorrent(id string, fileIds []int) error
 		GetTorrent(id string) (info TorrentInfo, err error)
+		GetTorrents() (infos []TorrentInfo, err error)
 	}
 
 	TorrentClient struct {
@@ -98,6 +100,16 @@ func (c *TorrentClient) GetTorrent(id string) (info TorrentInfo, err error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
+}
+
+func (c *TorrentClient) GetTorrents() (infos []TorrentInfo, err error) {
+	resp, err := Get(c, GetTorrentsUrl)
+	if err != nil {
+		return infos, err
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&infos)
+	return infos, err
 }
 
 func joinInts(slice []int) string {
