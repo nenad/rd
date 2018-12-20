@@ -13,6 +13,7 @@ const (
 	AddMagnetUrl      = ApiBaseUrl + "/torrents/addMagnet"
 	GetTorrentInfoUrl = ApiBaseUrl + "/torrents/info/%s"
 	GetTorrentsUrl    = ApiBaseUrl + "/torrents"
+	DeleteTorrentUrl  = ApiBaseUrl + "/torrents/delete/%s"
 	SelectFilesUrl    = ApiBaseUrl + "/torrents/selectFiles/%s"
 )
 
@@ -37,6 +38,7 @@ type (
 		SelectFilesFromTorrent(id string, fileIds []int) error
 		GetTorrent(id string) (info TorrentInfo, err error)
 		GetTorrents() (infos []TorrentInfo, err error)
+		Delete(id string) error
 	}
 
 	TorrentClient struct {
@@ -100,6 +102,11 @@ func (c *TorrentClient) GetTorrent(id string) (info TorrentInfo, err error) {
 
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
+}
+
+func (c *TorrentClient) Delete(id string) error {
+	_, err := Delete(c, fmt.Sprintf(DeleteTorrentUrl, id))
+	return err
 }
 
 func (c *TorrentClient) GetTorrents() (infos []TorrentInfo, err error) {

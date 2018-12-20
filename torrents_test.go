@@ -157,3 +157,20 @@ func TestClient_SelectFilesFromTorrent(t *testing.T) {
 	err := client.SelectFilesFromTorrent("XCBYL4ZIYPU42", []int{1, 2, 3})
 	assert.NoError(t, err)
 }
+
+func TestClient_DeleteTorrent(t *testing.T) {
+	client := NewTorrentTestClient(func(req *http.Request) *http.Response {
+		assert.Equal(t, "https://api.real-debrid.com/rest/1.0/torrents/delete/XCBYL4ZIYPU42", req.URL.String())
+		assert.Equal(t, "DELETE", req.Method)
+
+		return &http.Response{
+			StatusCode: http.StatusNoContent,
+			Header: map[string][]string{
+				"Content-Type": {"application/json"},
+			},
+		}
+	})
+
+	err := client.Delete("XCBYL4ZIYPU42")
+	assert.NoError(t, err)
+}
