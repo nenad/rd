@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const defaultClientID = "X245A4XAIBGVM"
+
 type TestRoundTripFunc func(req *http.Request) *http.Response
 
 func (rt TestRoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -42,7 +44,7 @@ func TestAuthClient_CanStartAuthenticationFlowSuccessfully(t *testing.T) {
 		}
 	})
 
-	verification, err := client.StartAuthentication(rd.OpenSourceClientId)
+	verification, err := client.StartAuthentication(defaultClientID)
 	assert.NoError(t, err)
 	assert.Equal(t, rd.Verification{
 		ExpiresIn:             600,
@@ -68,7 +70,7 @@ func TestAuthClient_CanObtainSecretsSuccessfully(t *testing.T) {
 		}
 	})
 
-	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", rd.OpenSourceClientId)
+	secrets, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", defaultClientID)
 	assert.NoError(t, err)
 	assert.Equal(t, rd.Secrets{
 		ClientSecret: "135d1b6dc60dddbdaa2e5d41772c85d56c54790b",
@@ -90,7 +92,7 @@ func TestAuthClient_ErrorsOnWrongOrEmptySecrets(t *testing.T) {
 		}
 	})
 
-	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", rd.OpenSourceClientId)
+	_, err := client.ObtainSecret("YD7HNOMEJOJY7P2FP4XIJA5E634RWZKWWQ6RZNJJT235G4RNCAOQ", defaultClientID)
 	assert.EqualError(t, err, "secrets not authorized")
 }
 

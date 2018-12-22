@@ -10,6 +10,14 @@ import (
 )
 
 type (
+	PaginatedResponse struct {
+		Page         int
+		Offset       int
+		CountPerPage int
+		TotalCount   int
+		Items        []interface{}
+	}
+
 	HTTPDoer interface {
 		Do(r *http.Request) (*http.Response, error)
 	}
@@ -51,7 +59,7 @@ func (c *HTTPClient) refreshToken() error {
 	return nil
 }
 
-func PostForm(doer HTTPDoer, url string, values map[string]string) (resp *http.Response, err error) {
+func httpPostForm(doer HTTPDoer, url string, values map[string]string) (resp *http.Response, err error) {
 	formBytes := &bytes.Buffer{}
 	writer := multipart.NewWriter(formBytes)
 	_ = writer.SetBoundary("realdebrid-boundary")
@@ -75,7 +83,7 @@ func PostForm(doer HTTPDoer, url string, values map[string]string) (resp *http.R
 	return resp, parseErrorResponse(resp)
 }
 
-func Get(doer HTTPDoer, path string, params ...map[string]string) (resp *http.Response, err error) {
+func httpGet(doer HTTPDoer, path string, params ...map[string]string) (resp *http.Response, err error) {
 	u, err := url.Parse(path)
 	if err != nil {
 		return nil, err
@@ -102,7 +110,7 @@ func Get(doer HTTPDoer, path string, params ...map[string]string) (resp *http.Re
 	return resp, parseErrorResponse(resp)
 }
 
-func Delete(doer HTTPDoer, path string) (resp *http.Response, err error) {
+func httpDelete(doer HTTPDoer, path string) (resp *http.Response, err error) {
 	u, err := url.Parse(path)
 	if err != nil {
 		return nil, err

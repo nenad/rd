@@ -52,6 +52,6 @@ func Test_FormPost(t *testing.T) {
 		}
 	})
 
-	_, err := PostForm(client, "https://example.com", map[string]string{"hello": "world"})
+	_, err := httpPostForm(client, "https://example.com", map[string]string{"hello": "world"})
 	assert.NoError(t, err)
 }

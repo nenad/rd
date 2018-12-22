@@ -10,11 +10,11 @@ import (
 
 // Endpoints
 const (
-	AddMagnetUrl      = ApiBaseUrl + "/torrents/addMagnet"
-	GetTorrentInfoUrl = ApiBaseUrl + "/torrents/info/%s"
-	GetTorrentsUrl    = ApiBaseUrl + "/torrents"
-	DeleteTorrentUrl  = ApiBaseUrl + "/torrents/delete/%s"
-	SelectFilesUrl    = ApiBaseUrl + "/torrents/selectFiles/%s"
+	magnetAddUrl          = apiBaseUrl + "/torrents/addMagnet"
+	torrentInfoUrl        = apiBaseUrl + "/torrents/info/%s"
+	torrentsUrl           = apiBaseUrl + "/torrents"
+	torrentDeleteUrl      = apiBaseUrl + "/torrents/delete/%s"
+	torrentSelectFilesUrl = apiBaseUrl + "/torrents/selectFiles/%s"
 )
 
 // Possible torrent states
@@ -80,7 +80,7 @@ type (
 )
 
 func (c *TorrentClient) AddMagnetLinkSimple(magnet string) (info TorrentUrlInfo, err error) {
-	resp, err := PostForm(c, AddMagnetUrl, map[string]string{"magnet": magnet})
+	resp, err := httpPostForm(c, magnetAddUrl, map[string]string{"magnet": magnet})
 	if err != nil {
 		return info, err
 	}
@@ -90,12 +90,12 @@ func (c *TorrentClient) AddMagnetLinkSimple(magnet string) (info TorrentUrlInfo,
 }
 
 func (c *TorrentClient) SelectFilesFromTorrent(id string, fileIds []int) error {
-	_, err := PostForm(c, fmt.Sprintf(SelectFilesUrl, id), map[string]string{"files": joinInts(fileIds)})
+	_, err := httpPostForm(c, fmt.Sprintf(torrentSelectFilesUrl, id), map[string]string{"files": joinInts(fileIds)})
 	return err
 }
 
 func (c *TorrentClient) GetTorrent(id string) (info TorrentInfo, err error) {
-	resp, err := Get(c, fmt.Sprintf(GetTorrentInfoUrl, id))
+	resp, err := httpGet(c, fmt.Sprintf(torrentInfoUrl, id))
 	if err != nil {
 		return info, err
 	}
@@ -105,12 +105,12 @@ func (c *TorrentClient) GetTorrent(id string) (info TorrentInfo, err error) {
 }
 
 func (c *TorrentClient) Delete(id string) error {
-	_, err := Delete(c, fmt.Sprintf(DeleteTorrentUrl, id))
+	_, err := httpDelete(c, fmt.Sprintf(torrentDeleteUrl, id))
 	return err
 }
 
 func (c *TorrentClient) GetTorrents() (infos []TorrentInfo, err error) {
-	resp, err := Get(c, GetTorrentsUrl)
+	resp, err := httpGet(c, torrentsUrl)
 	if err != nil {
 		return infos, err
 	}
