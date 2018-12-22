@@ -51,7 +51,7 @@ func TestClient_UnrestrictLinkSimple(t *testing.T) {
 
 	urlInfo, err := client.SimpleUnrestrict("test-link-here")
 	assert.NoError(t, err)
-	assert.Equal(t, rd.DownloadInfo{
+	assert.Equal(t, rd.UnrestrictInfo{
 		ID:         "AIO2UCGAIAQMD",
 		Filename:   "helloworld.mkv",
 		Filesize:   1361435465,

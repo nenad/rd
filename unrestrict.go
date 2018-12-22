@@ -6,11 +6,11 @@ import (
 
 // Endpoints
 const (
-	UnrestrictUrl = ApiBaseUrl + "/unrestrict/link"
+	unrestrictUrl = apiBaseUrl + "/unrestrict/link"
 )
 
 type (
-	DownloadInfo struct {
+	UnrestrictInfo struct {
 		ID         string `json:"id"`
 		Filename   string `json:"filename"`
 		MimeType   string `json:"mimeType"`
@@ -25,7 +25,7 @@ type (
 	}
 
 	UnrestrictService interface {
-		SimpleUnrestrict(link string) (info DownloadInfo, err error)
+		SimpleUnrestrict(link string) (info UnrestrictInfo, err error)
 	}
 
 	UnrestrictClient struct {
@@ -33,8 +33,8 @@ type (
 	}
 )
 
-func (c *UnrestrictClient) SimpleUnrestrict(link string) (info DownloadInfo, err error) {
-	resp, err := PostForm(c, UnrestrictUrl, map[string]string{"link": link})
+func (c *UnrestrictClient) SimpleUnrestrict(link string) (info UnrestrictInfo, err error) {
+	resp, err := httpPostForm(c, unrestrictUrl, map[string]string{"link": link})
 	if err != nil {
 		return info, err
 	}

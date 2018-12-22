@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-const ApiBaseUrl = "https://api.real-debrid.com/rest/1.0"
+const apiBaseUrl = "https://api.real-debrid.com/rest/1.0"
 
 type RealDebrid struct {
 	Torrents   TorrentService

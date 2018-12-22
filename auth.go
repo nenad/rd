@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	AuthBaseUrl = "https://api.real-debrid.com/oauth/v2"
+	authBaseUrl = "https://api.real-debrid.com/oauth/v2"
 
-	DeviceUrl      = AuthBaseUrl + "/device/code"
-	CredentialsUrl = AuthBaseUrl + "/device/credentials"
-	TokenUrl       = AuthBaseUrl + "/token"
+	deviceUrl      = authBaseUrl + "/device/code"
+	credentialsUrl = authBaseUrl + "/device/credentials"
+	tokenUrl       = authBaseUrl + "/token"
 
-	OpenSourceClientId = "X245A4XAIBGVM"
+	defaultClientID = "X245A4XAIBGVM"
 )
 
 type (
@@ -42,7 +42,7 @@ func NewAuthClient(doer HTTPDoer) *AuthClient {
 // StartAuthentication starts the authentication flow for the service
 // RealDebrid API information: https://api.real-debrid.com/#device_auth_no_secret
 func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err error) {
-	resp, err := Get(c, DeviceUrl, map[string]string{"client_id": clientID, "new_credentials": "yes"})
+	resp, err := httpGet(c, deviceUrl, map[string]string{"client_id": clientID, "new_credentials": "yes"})
 	if err != nil {
 		return v, err
 	}
@@ -54,7 +54,7 @@ func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err e
 // ObtainSecret returns the HTTPClient ID and HTTPClient secret that are used for
 // obtaining a valid token in the next step
 func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets, err error) {
-	resp, err := Get(c, CredentialsUrl, map[string]string{"client_id": clientID, "code": deviceCode})
+	resp, err := httpGet(c, credentialsUrl, map[string]string{"client_id": clientID, "code": deviceCode})
 	if err != nil {
 		return secrets, err
 	}
@@ -68,7 +68,7 @@ func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets,
 
 // ObtainAccessToken tries to get a new token from the service
 func (c *AuthClient) ObtainAccessToken(clientID, secret, code string) (t Token, err error) {
-	resp, err := PostForm(c, TokenUrl, map[string]string{
+	resp, err := httpPostForm(c, tokenUrl, map[string]string{
 		"client_id":     clientID,
 		"client_secret": secret,
 		"code":          code,
@@ -89,7 +89,7 @@ func (c *AuthClient) RefreshAccessToken(token Token) (t Token, err error) {
 		return t, fmt.Errorf("cannot reauthorize without refresh token")
 	}
 
-	secrets, err := c.ObtainSecret(token.RefreshToken, OpenSourceClientId)
+	secrets, err := c.ObtainSecret(token.RefreshToken, defaultClientID)
 	if err != nil {
 		return t, err
 	}
