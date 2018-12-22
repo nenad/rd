@@ -9,6 +9,8 @@ const apiBaseUrl = "https://api.real-debrid.com/rest/1.0"
 type RealDebrid struct {
 	Torrents   TorrentService
 	Unrestrict UnrestrictService
+	Downloads  DownloadService
+
 	httpClient *HTTPClient
 }
 
@@ -27,6 +29,7 @@ func NewRealDebrid(token Token, client *http.Client, options ...func(*HTTPClient
 		httpClient: c,
 		Torrents:   &TorrentClient{c},
 		Unrestrict: &UnrestrictClient{c},
+		Downloads:  &DownloadClient{c},
 	}
 }
 
