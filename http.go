@@ -129,6 +129,10 @@ func httpDelete(doer HTTPDoer, path string) (resp *http.Response, err error) {
 }
 
 func parseErrorResponse(r *http.Response) error {
+	if r == nil {
+        return fmt.Errorf("real-debrid is down")
+	}
+
 	if r.StatusCode >= 200 && r.StatusCode < 300 {
 		return nil
 	}
