@@ -64,8 +64,8 @@ type (
 		Filename         string    `json:"filename"`
 		OriginalFilename string    `json:"original_filename"`
 		Hash             string    `json:"hash"`
-		Bytes            int       `json:"bytes"`
-		OriginalBytes    int       `json:"original_bytes"`
+		Bytes            int64     `json:"bytes"`
+		OriginalBytes    int64     `json:"original_bytes"`
 		Host             string    `json:"host"`
 		Split            int       `json:"split"`
 		Progress         int       `json:"progress"`
