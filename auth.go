@@ -25,7 +25,7 @@ type (
 		DeviceCode            string `json:"device_code"`
 		UserCode              string `json:"user_code"`
 		Interval              int    `json:"interval"`
-		ExpiresIn             int64  `json:"expires_in"`
+		ExpiresIn             int    `json:"expires_in"`
 		VerificationURL       string `json:"verification_url"`
 		DirectVerificationURL string `json:"direct_verification_url"`
 	}
