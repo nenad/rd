@@ -25,7 +25,7 @@ type (
 		DeviceCode            string `json:"device_code"`
 		UserCode              string `json:"user_code"`
 		Interval              int    `json:"interval"`
-		ExpiresIn             int    `json:"expires_in"`
+		ExpiresIn             int64  `json:"expires_in"`
 		VerificationURL       string `json:"verification_url"`
 		DirectVerificationURL string `json:"direct_verification_url"`
 	}
@@ -47,6 +47,7 @@ func (c *AuthClient) StartAuthentication(clientID string) (v Verification, err e
 		return v, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&v)
 	return v, err
 }
@@ -59,6 +60,7 @@ func (c *AuthClient) ObtainSecret(deviceCode, clientID string) (secrets Secrets,
 		return secrets, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&secrets)
 	if secrets.ClientID == "" || secrets.ClientSecret == "" {
 		return secrets, fmt.Errorf("secrets not authorized")
@@ -79,6 +81,7 @@ func (c *AuthClient) ObtainAccessToken(clientID, secret, code string) (t Token, 
 	}
 
 	t.ObtainedAt = time.Now()
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&t)
 	return t, err
 }

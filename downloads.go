@@ -17,7 +17,7 @@ type (
 		ID         string    `json:"id"`
 		Filename   string    `json:"filename"`
 		MimeType   string    `json:"mimeType"`
-		Filesize   int       `json:"filesize"`
+		Filesize   int64     `json:"filesize"`
 		Link       string    `json:"link"`
 		Host       string    `json:"host"`
 		HostIcon   string    `json:"host_icon"`
@@ -43,6 +43,7 @@ func (s *DownloadClient) List() (items []DownloadInfo, err error) {
 		return nil, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&items)
 
 	return items, err
