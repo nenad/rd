@@ -55,7 +55,7 @@ type (
 	File struct {
 		ID       int    `json:"id"`
 		Path     string `json:"path"`
-		Bytes    int    `json:"bytes"`
+		Bytes    int64  `json:"bytes"`
 		Selected int    `json:"selected"`
 	}
 
@@ -85,6 +85,7 @@ func (c *TorrentClient) AddMagnetLinkSimple(magnet string) (info TorrentUrlInfo,
 		return info, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }
@@ -100,6 +101,7 @@ func (c *TorrentClient) GetTorrent(id string) (info TorrentInfo, err error) {
 		return info, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
 }
@@ -115,6 +117,7 @@ func (c *TorrentClient) GetTorrents() (infos []TorrentInfo, err error) {
 		return infos, err
 	}
 
+	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&infos)
 	return infos, err
 }
