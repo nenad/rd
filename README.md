@@ -1,6 +1,6 @@
 # rd
 
-![status](https://travis-ci.com/nenadstojanovikj/rd.svg?branch=master)
+![status](https://travis-ci.com/nenad/rd.svg?branch=master)
 
 RealDebrid API client for the Go language
 

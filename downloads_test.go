@@ -2,7 +2,7 @@ package rd_test
 
 import (
 	"bytes"
-	"github.com/nenadstojanovikj/rd"
+	"github.com/nenad/rd"
 	"io/ioutil"
 	"net/http"
 	"testing"
