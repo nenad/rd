@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/nenadstojanovikj/rd"
+	"github.com/nenad/rd"
 
 	"github.com/stretchr/testify/assert"
 )
